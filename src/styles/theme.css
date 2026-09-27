@@ -1,0 +1,513 @@
+/*
+ * Mapeamento dos tokens do tema para utilitarios do Tailwind CSS v4.
+ *
+ * `@theme inline` faz o Tailwind usar o valor da variavel em vez de emitir uma copia
+ * propria, entao `bg-primary` compila para `background-color: var(--color-primary)`.
+ * Como nao ha copia emitida, nao existe conflito de ordem com o bloco de tema
+ * injetado no `<html>`: quem manda nos valores e sempre o Theme Engine.
+ */
+
+@theme inline {
+  /* Cor */
+  --color-primary: var(--color-primary);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-foreground);
+  --color-muted: var(--color-muted);
+  --color-surface: var(--color-surface);
+  --color-border: var(--color-border);
+  --color-accent: var(--color-accent);
+  --color-accent-foreground: var(--color-accent-foreground);
+  --color-success: var(--color-success);
+  --color-danger: var(--color-danger);
+  --color-overlay: var(--color-overlay);
+
+  /* Raio */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-pill: var(--radius-pill);
+
+  /* Sombra */
+  --shadow-hairline: var(--shadow-hairline);
+  --shadow-card: var(--shadow-card);
+  --shadow-lifted: var(--shadow-lifted);
+  --shadow-overlay: var(--shadow-overlay);
+
+  /* Tipografia */
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+}
+
+/*
+ * Escala tipografica.
+ *
+ * Segue a proporcao recomendada por The Elements of Typographic Style: passos
+ * previsiveis entre niveis, com line-height maior nos corpos menores e menor nos
+ * titulos grandes. Os tamanhos de display usam `clamp()` para nao exigir um ponto
+ * de quebra por tamanho de tela.
+ */
+@theme {
+  --text-display-2xl: clamp(2.75rem, 8vw, 7rem);
+  --text-display-2xl--line-height: 0.92;
+  --text-display-2xl--letter-spacing: -0.035em;
+
+  --text-display-xl: clamp(2.25rem, 5.5vw, 4.5rem);
+  --text-display-xl--line-height: 0.98;
+  --text-display-xl--letter-spacing: -0.03em;
+
+  --text-display-lg: clamp(1.875rem, 4vw, 3rem);
+  --text-display-lg--line-height: 1.05;
+  --text-display-lg--letter-spacing: -0.022em;
+
+  --text-heading-lg: clamp(1.375rem, 2.4vw, 2rem);
+  --text-heading-lg--line-height: 1.2;
+  --text-heading-lg--letter-spacing: -0.015em;
+
+  --text-heading-md: 1.125rem;
+  --text-heading-md--line-height: 1.3;
+  --text-heading-md--letter-spacing: -0.01em;
+
+  --text-body-lg: 1.0625rem;
+  --text-body-lg--line-height: 1.7;
+
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.65;
+
+  --text-body-sm: 0.8125rem;
+  --text-body-sm--line-height: 1.55;
+
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1.2;
+
+  /* Ponto de quebra extra para os aparelhos de 320 a 430 px */
+  --breakpoint-xs: 22.5rem;
+}
+
+/*
+ * Estilos tipograficos do tema.
+ *
+ * Cada utilitario abaixo fixa apenas familia, peso e espacamento, que sao os eixos
+ * controlados pelo tema. O tamanho vem dos utilitarios `text-*`.
+ */
+@utility type-display {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-display);
+  text-transform: var(--heading-transform);
+  text-wrap: balance;
+}
+
+@utility type-heading {
+  font-family: var(--font-display);
+  font-weight: var(--weight-heading);
+  letter-spacing: var(--tracking-display);
+  text-transform: var(--heading-transform);
+  text-wrap: balance;
+}
+
+@utility type-body {
+  font-family: var(--font-body);
+  font-weight: var(--weight-body);
+}
+
+@utility type-label {
+  font-family: var(--font-body);
+  font-weight: var(--weight-label);
+  letter-spacing: var(--tracking-label);
+}
+
+@utility type-button {
+  font-family: var(--font-body);
+  font-weight: var(--button-weight);
+  letter-spacing: var(--button-tracking);
+  text-transform: var(--button-transform);
+}
+
+/* Filete que se desenha no hover, usado nos links de navegacao. */
+@utility link-rule {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: -0.25rem;
+    height: 1px;
+    background-color: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--duration-base) var(--ease-out-expo);
+  }
+
+  &:hover::after,
+  &:focus-visible::after {
+    transform: scaleX(1);
+  }
+}
+
+/* Esconde a barra de rolagem preservando o scroll por teclado e toque. */
+@utility scroll-hidden {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: var(--color-border);
+  }
+
+  html {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+    font-weight: var(--weight-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    scroll-padding-top: calc(var(--header-height) + 1rem);
+    text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    min-height: 100dvh;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  ::selection {
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /*
+   * Movimento: uma unica sequencia orquestrada de entrada, disparada uma vez.
+   * `prefers-reduced-motion` desliga tudo abaixo.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Entrada unica do hero: sobe e aparece, sem ficar repetindo a cada secao. */
+@keyframes aura-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.25rem, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility reveal-up {
+  animation: aura-reveal var(--duration-reveal) var(--ease-out-expo) both;
+}
+
+/* ---------------------------------------------------------------------------
+ * Movimento
+ *
+ * A regra aqui e simples: animacao que responde a uma acao ou que marca UM momento
+ * orquestrado. Nao existe revelacao repetida em cada secao — quando tudo entra
+ * animado ao mesmo tempo, nada parece intencional e a pagina fica mais lenta de
+ * ler. Por isso a primeira dobra tem sequencia, e o resto responde ao uso.
+ * ------------------------------------------------------------------------- */
+
+/* Entrada em sequencia da primeira dobra: titulo, apoio, acoes. */
+@utility reveal-step-1 {
+  animation: aura-reveal var(--duration-reveal) var(--ease-out-expo) both;
+  animation-delay: calc(var(--stagger-step) * 1);
+}
+
+@utility reveal-step-2 {
+  animation: aura-reveal var(--duration-reveal) var(--ease-out-expo) both;
+  animation-delay: calc(var(--stagger-step) * 2);
+}
+
+@utility reveal-step-3 {
+  animation: aura-reveal var(--duration-reveal) var(--ease-out-expo) both;
+  animation-delay: calc(var(--stagger-step) * 3);
+}
+
+/* Imagem que abre o site: um unico movimento lento de aproximacao. */
+@utility reveal-image {
+  animation: aura-image-in var(--duration-hero) var(--ease-out-expo) both;
+}
+
+/* Apenas opacidade, para blocos que nao devem se deslocar. */
+@utility reveal-fade {
+  animation: aura-fade-in var(--duration-reveal) var(--ease-out-quart) both;
+}
+
+/* Entrada e saida de paineis, modais e veus. */
+@utility overlay-enter {
+  animation: aura-fade-in var(--duration-enter) var(--ease-out-quart) both;
+}
+
+@utility overlay-exit {
+  animation: aura-fade-out var(--duration-exit) var(--ease-in-out-soft) both;
+}
+
+@utility panel-enter-right {
+  animation: aura-panel-in-right var(--duration-enter) var(--ease-out-expo) both;
+}
+
+@utility panel-exit-right {
+  animation: aura-panel-out-right var(--duration-exit) var(--ease-in-out-soft) both;
+}
+
+@utility panel-enter-left {
+  animation: aura-panel-in-left var(--duration-enter) var(--ease-out-expo) both;
+}
+
+@utility panel-exit-left {
+  animation: aura-panel-out-left var(--duration-exit) var(--ease-in-out-soft) both;
+}
+
+@utility modal-enter {
+  animation: aura-modal-in var(--duration-enter) var(--ease-out-expo) both;
+}
+
+@utility modal-exit {
+  animation: aura-modal-out var(--duration-exit) var(--ease-in-out-soft) both;
+}
+
+/* Confirmacao de uma acao: favorito marcado, tamanho adicionado, contador. */
+@utility pop-in {
+  animation: aura-pop 420ms var(--ease-spring) both;
+}
+
+/* Retorno de formulario. */
+@utility status-in {
+  animation: aura-status-in var(--duration-base) var(--ease-out-expo) both;
+}
+
+@keyframes aura-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes aura-fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes aura-panel-in-right {
+  from {
+    opacity: 0.4;
+    transform: translate3d(100%, 0, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes aura-panel-out-right {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+
+  to {
+    opacity: 0.4;
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+@keyframes aura-panel-in-left {
+  from {
+    opacity: 0.4;
+    transform: translate3d(-100%, 0, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes aura-panel-out-left {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+
+  to {
+    opacity: 0.4;
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+/*
+ * Abertura de modal: sobe e cresce de 0.96 para 1. A escala anterior (0.985) era
+ * discreta demais para ser percebida; 0.96 marca a abertura sem parecer exagerado.
+ */
+@keyframes aura-modal-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.5rem, 0) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes aura-modal-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(0, 1rem, 0) scale(0.98);
+  }
+}
+
+@keyframes aura-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  35% {
+    transform: scale(1.28);
+  }
+
+  65% {
+    transform: scale(0.94);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes aura-image-in {
+  from {
+    opacity: 0.35;
+    transform: scale(1.06);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes aura-status-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.35rem, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes aura-reveal-view {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.5rem, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * Sob `prefers-reduced-motion` nada deve atrasar: alem de neutralizar duracoes
+ * (feito na camada base), o atraso em cascata tambem sai.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-delay: 0ms !important;
+    animation-timeline: auto !important;
+  }
+}
+
+/*
+ * Revelacao por rolagem.
+ *
+ * Usa animacoes dirigidas por rolagem: roda sem JavaScript e so e aplicada onde ha
+ * suporte. Em navegadores sem suporte o bloco inteiro e ignorado, e o conteudo
+ * aparece normalmente — nada quebra e nada desaparece.
+ */
+@layer utilities {
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal-view {
+        animation-name: aura-reveal-view;
+        animation-duration: auto;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 70%;
+      }
+    }
+  }
+}

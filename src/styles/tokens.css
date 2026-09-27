@@ -1,0 +1,57 @@
+/*
+ * Tokens estaticos do design system.
+ *
+ * Aqui ficam apenas medidas que nao mudam com o tema: larguras, espacamentos,
+ * duracoes de movimento e camadas de empilhamento.
+ *
+ * Cor, tipografia, raio e sombra NAO sao declarados aqui. Eles vem do Theme Engine
+ * (`src/config/theme.ts` + `src/lib/theme.ts`) e sao injetados no elemento `<html>`
+ * pelo layout raiz, em tempo de renderizacao no servidor.
+ */
+
+:root {
+  /* Largura e ritmo do layout */
+  --layout-max-width: 88rem;
+  --layout-wide-width: 110rem;
+  --layout-gutter: clamp(1.25rem, 4vw, 4.5rem);
+  --layout-section-space: clamp(4rem, 8vw, 8.5rem);
+  --layout-section-space-tight: clamp(2.5rem, 5vw, 4.5rem);
+  --layout-grid-gap: clamp(1rem, 2vw, 2rem);
+
+  /* Alturas estruturais, usadas por header sticky e scroll-margin */
+  --header-height: 4.5rem;
+  --announcement-height: 2.25rem;
+
+  /* Medidas de leitura tipografica */
+  --measure-prose: 68ch;
+  --measure-tight: 44ch;
+  --measure-wide: 78ch;
+
+  /* Movimento */
+  --duration-fast: 140ms;
+  --duration-exit: 180ms;
+  --duration-base: 240ms;
+  --duration-enter: 260ms;
+  --duration-slow: 520ms;
+  --duration-reveal: 720ms;
+  --duration-hero: 1100ms;
+  --stagger-step: 70ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Camadas */
+  --z-sticky: 30;
+  --z-header: 40;
+  --z-overlay: 50;
+  --z-drawer: 60;
+  --z-modal: 70;
+  --z-toast: 80;
+
+  /* Proporcoes de imagem usadas nos cards e na galeria */
+  --ratio-product: 4 / 5;
+  --ratio-editorial: 3 / 4;
+  --ratio-wide: 16 / 9;
+  --ratio-square: 1 / 1;
+}

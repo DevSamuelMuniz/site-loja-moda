@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000" role="img">
+  <defs>
+    <linearGradient id="field" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#f1f1ef"/>
+      <stop offset="1" stop-color="#dcdcda"/>
+    </linearGradient>
+    <linearGradient id="cloth" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#525255"/>
+      <stop offset="0.55" stop-color="#3A3A3E"/>
+      <stop offset="1" stop-color="#333337"/>
+    </linearGradient>
+    
+  <pattern id="w" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="none"/>
+    <path d="M0 1.5H6M0 4.5H6" stroke="#656568" stroke-width="1" opacity="0.22"/>
+    <path d="M1.5 0V6M4.5 0V6" stroke="#656568" stroke-width="1" opacity="0.1"/>
+  </pattern>
+  </defs>
+  <rect width="800" height="1000" fill="url(#field)"/>
+  <rect width="800" height="1000" fill="url(#w)"/>
+  <ellipse cx="400" cy="792" rx="170" ry="22" fill="#232325" opacity="0.08"/>
+  <g>
+    <path d="M302 244H498L524 780H432L410 496H390L368 780H276Z" fill="url(#cloth)" stroke="#656568" stroke-width="3" stroke-opacity="0.55" stroke-linejoin="round"/>
+    <path d="M400 244L400 496" fill="none" stroke="#656568" stroke-width="3" opacity="0.5"/>
+    <path d="M302 300H498" fill="none" stroke="#656568" stroke-width="3" opacity="0.5"/>
+
+  </g>
+</svg>

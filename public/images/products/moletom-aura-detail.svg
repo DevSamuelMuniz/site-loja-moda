@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000" role="img">
+  <defs>
+    <linearGradient id="fold" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#656568"/>
+      <stop offset="0.42" stop-color="#3A3A3E"/>
+      <stop offset="1" stop-color="#313134"/>
+    </linearGradient>
+    
+  <pattern id="w" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="none"/>
+    <path d="M0 1.5H6M0 4.5H6" stroke="#757578" stroke-width="1" opacity="0.16"/>
+    <path d="M1.5 0V6M4.5 0V6" stroke="#757578" stroke-width="1" opacity="0.08"/>
+  </pattern>
+  </defs>
+  <rect width="800" height="1000" fill="url(#fold)"/>
+  <rect width="800" height="1000" fill="url(#w)"/>
+  <path d="M0 300C200 380 560 300 800 400" fill="none" stroke="#89898b" stroke-width="22" opacity="0.25"/>
+  <path d="M0 690H800" stroke="#757578" stroke-width="3" stroke-dasharray="16 12" opacity="0.6"/>
+  <g transform="rotate(-3 620 830)">
+    <rect x="520" y="790" width="200" height="80" rx="6" fill="#e3e3e4" opacity="0.94"/>
+    <path d="M556 826H684" stroke="#1d1d1f" stroke-width="5" opacity="0.7"/>
+    <path d="M556 844H640" stroke="#1d1d1f" stroke-width="4" opacity="0.45"/>
+  </g>
+</svg>
