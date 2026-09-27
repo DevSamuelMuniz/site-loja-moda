@@ -26,7 +26,23 @@ export interface SeoConfig {
   themeColor: string;
 }
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000';
+/**
+ * Resolve a URL absoluta do site.
+ *
+ * Aceita valor ausente, em branco ou sem protocolo. Uma variavel de ambiente criada
+ * vazia no painel da hospedagem chega como string vazia (nao `undefined`), e
+ * `new URL('')` derruba o build inteiro. Aqui isso cai no padrao local, e um valor sem
+ * `https://` recebe o protocolo em vez de quebrar.
+ */
+function resolveSiteUrl(value: string | undefined): string {
+  const raw = value?.trim();
+  if (!raw) return 'http://localhost:3000';
+
+  const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  return withProtocol.replace(/\/+$/, '');
+}
+
+const siteUrl = resolveSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
 
 export const seoConfig: SeoConfig = {
   siteUrl,

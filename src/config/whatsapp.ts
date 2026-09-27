@@ -18,9 +18,30 @@ export interface WhatsappConfig {
   productMessageTemplate: string;
 }
 
+/**
+ * Resolve o numero de atendimento.
+ *
+ * Tres casos, de proposito:
+ * - nada configurado: usa o numero demonstrativo, para a loja abrir funcionando;
+ * - configurado e valido: usa o que foi informado;
+ * - configurado em branco ou invalido: desliga o WhatsApp em vez de publicar um link
+ *   quebrado. Uma variavel criada vazia no painel chega como string vazia, nao como
+ *   `undefined`, entao `??` sozinho nao resolveria.
+ */
+const demoNumber = '5581999999999';
+
+function resolveNumber(value: string | undefined): string | null {
+  if (value === undefined) return demoNumber;
+
+  const digits = value.replace(/\D/g, '');
+  return digits.length >= 10 ? digits : null;
+}
+
+const whatsappNumber = resolveNumber(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER);
+
 export const whatsappConfig: WhatsappConfig = {
-  enabled: true,
-  number: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5581999999999',
+  enabled: whatsappNumber !== null,
+  number: whatsappNumber ?? '',
   message: 'Olá! Gostaria de saber mais sobre um produto.',
   displayName: 'Atendimento AURA',
   floating: true,
