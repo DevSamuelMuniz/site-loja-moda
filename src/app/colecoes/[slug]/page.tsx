@@ -25,8 +25,8 @@ import { buildMetadata, itemListSchema } from '@/lib/seo';
  * demais colecoes.
  */
 
-export function generateStaticParams() {
-  return getCollections().map((collection) => ({ slug: collection.slug }));
+export async function generateStaticParams() {
+  return (await getCollections()).map((collection) => ({ slug: collection.slug }));
 }
 
 export async function generateMetadata({
@@ -35,7 +35,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const collection = getCollectionBySlug(slug);
+  const collection = await getCollectionBySlug(slug);
 
   if (!collection) {
     return buildMetadata({
@@ -62,16 +62,16 @@ export default async function CollectionPage({
   searchParams: Promise<RawSearchParams>;
 }) {
   const { slug } = await params;
-  const collection = getCollectionBySlug(slug);
+  const collection = await getCollectionBySlug(slug);
   if (!collection) notFound();
 
   const rawParams = await searchParams;
   const filters = readFilters(rawParams);
   const page = readPage(rawParams);
 
-  const facets = getFacets(filters);
-  const result = queryProducts(filters, page);
-  const collectionProducts = getProducts().filter((product) =>
+  const facets = await getFacets(filters);
+  const result = await queryProducts(filters, page);
+  const collectionProducts = (await getProducts()).filter((product) =>
     matchesCollection(product, collection.slug),
   );
 

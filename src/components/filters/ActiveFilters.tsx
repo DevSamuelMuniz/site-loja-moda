@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { X } from 'lucide-react';
-import { buildHref, emptyFilters } from '@/lib/catalog';
+import { emptyFilters } from '@/lib/catalog/filters';
+import { buildHref } from '@/lib/catalog/params';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { ProductFilters } from '@/types';

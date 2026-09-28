@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { buildHref, isPriceBandActive, priceBands, toggleValue } from '@/lib/catalog';
+import { buildHref, isPriceBandActive, priceBands, toggleValue } from '@/lib/catalog/params';
 import { cn } from '@/lib/utils';
 import type { FacetValue, FilterFacets, ProductFilters } from '@/types';
 

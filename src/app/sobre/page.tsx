@@ -21,8 +21,8 @@ export const metadata: Metadata = buildMetadata({
   images: [brandStory.image],
 });
 
-export default function AboutPage() {
-  const summary = getCatalogSummary();
+export default async function AboutPage() {
+  const summary = await getCatalogSummary();
 
   return (
     <>

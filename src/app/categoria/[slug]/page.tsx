@@ -26,8 +26,8 @@ import { buildMetadata, itemListSchema } from '@/lib/seo';
  * duas precisa de uma pagina propria.
  */
 
-export function generateStaticParams() {
-  return getCategories().map((category) => ({ slug: category.slug }));
+export async function generateStaticParams() {
+  return (await getCategories()).map((category) => ({ slug: category.slug }));
 }
 
 export async function generateMetadata({
@@ -36,7 +36,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const category = getCategoryBySlug(slug);
+  const category = await getCategoryBySlug(slug);
 
   if (!category) {
     return buildMetadata({
@@ -63,20 +63,20 @@ export default async function CategoryPage({
   searchParams: Promise<RawSearchParams>;
 }) {
   const { slug } = await params;
-  const category = getCategoryBySlug(slug);
+  const category = await getCategoryBySlug(slug);
   if (!category) notFound();
 
   const rawParams = await searchParams;
   const filters = readFilters(rawParams);
   const page = readPage(rawParams);
 
-  const facets = getFacets(filters);
-  const result = queryProducts(filters, page);
+  const facets = await getFacets(filters);
+  const result = await queryProducts(filters, page);
 
   const inCategory = filterProducts(
-    getProducts(),
+    await getProducts(),
     { ...filters, query: '' },
-    dictionaries(),
+    await dictionaries(),
   ).filter((product) =>
     category.kind === 'audience'
       ? product.audience === category.audience

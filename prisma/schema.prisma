@@ -1,0 +1,423 @@
+// Schema da plataforma — FASE 1 do roadmap (escopo §41).
+//
+// Cobre apenas o que a FASE 1 precisa: loja, configuracao, usuarios, clientes, catalogo
+// (categorias, colecoes, produtos, variacoes, imagens) e estoque com movimentacoes.
+// Carrinho, pedidos, checkout, pagamentos, frete, cupons, avaliacoes e painel entram na
+// FASE 2/3 — nao criar tabela vazia "para depois".
+//
+// Regras de multi-tenant (escopo §22), aplicadas em todas as tabelas:
+//   1. toda entidade isolavel tem `storeId` com FK para `stores`;
+//   2. todo indice de consulta comeca por `storeId`;
+//   3. unicidade e composta com a loja: `@@unique([storeId, slug])`;
+//   4. nenhuma consulta confia em `storeId` vindo do cliente — o tenant e resolvido no
+//      servidor (sessao no painel, host na loja publica);
+//   5. dinheiro e `Decimal(10, 2)`, nunca ponto flutuante.
+//
+// Tabelas filhas (variacoes, imagens, cores, estoque) tambem carregam `storeId`. E
+// denormalizacao proposital: permite indice e unicidade por loja sem depender de join, e
+// mantem a regra 1 literal. Quem escreve e responsavel por copiar o `storeId` do produto.
+
+generator client {
+  provider = "prisma-client"
+  // O cliente gerado vive no codigo-fonte (mudanca do Prisma 7) e nao e versionado.
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Loja e configuracao
+// ---------------------------------------------------------------------------
+
+enum StoreStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+model Store {
+  id        String      @id @default(cuid())
+  slug      String      @unique
+  name      String
+  legalName String?
+  /// Dominio proprio da loja, quando houver (escopo §22).
+  domain    String?     @unique
+  currency  String      @default("BRL")
+  locale    String      @default("pt-BR")
+  status    StoreStatus @default(ACTIVE)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  settings           Setting[]
+  users              User[]
+  customers          Customer[]
+  categories         Category[]
+  collections        Collection[]
+  products           Product[]
+  productColors      ProductColor[]
+  productImages      ProductImage[]
+  productVariants    ProductVariant[]
+  inventory          Inventory[]
+  inventoryMovements InventoryMovement[]
+
+  @@map("stores")
+}
+
+/// Configuracao da loja por chave.
+///
+/// Cada chave corresponde a um modulo de configuracao do site atual (`brand`, `theme`,
+/// `ecommerce`, `seo`, `social`, `whatsapp`, `news`), com o mesmo formato de objeto. E o
+/// que permite o lojista mudar identidade, textos e regras sem tocar em codigo (§21, §36):
+/// o site passa a ler a configuracao da loja em vez das constantes.
+model Setting {
+  id        String   @id @default(cuid())
+  storeId   String
+  key       String
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, key])
+  @@map("settings")
+}
+
+// ---------------------------------------------------------------------------
+// Acesso e clientes
+// ---------------------------------------------------------------------------
+
+/// Tipos de usuario do escopo §23.
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  MANAGER
+  OPERATOR
+}
+
+model User {
+  id           String    @id @default(cuid())
+  storeId      String
+  name         String
+  email        String
+  passwordHash String
+  role         UserRole  @default(CUSTOMER)
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  store              Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer           Customer?
+  inventoryMovements InventoryMovement[]
+
+  /// Unicidade por loja: a mesma pessoa pode administrar lojas diferentes.
+  @@unique([storeId, email])
+  @@index([storeId, role])
+  @@map("users")
+}
+
+enum CustomerStatus {
+  ACTIVE
+  BLOCKED
+}
+
+/// Quem compra. Pode existir sem conta (escopo §12 permite compra como visitante): nesse
+/// caso `userId` fica nulo e o cliente e identificado pelo pedido. Conta e conveniencia,
+/// nao pre-requisito para comprar.
+model Customer {
+  id                  String         @id @default(cuid())
+  storeId             String
+  userId              String?        @unique
+  name                String
+  email               String
+  phone               String?
+  /// Documento fiscal, quando necessario e legalmente aplicavel (escopo §16).
+  document            String?
+  status              CustomerStatus @default(ACTIVE)
+  /// Consentimento de comunicacao, exigido por LGPD (escopo §31).
+  acceptedMarketingAt DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([storeId, email])
+  @@index([storeId, createdAt])
+  @@map("customers")
+}
+
+// ---------------------------------------------------------------------------
+// Catalogo
+// ---------------------------------------------------------------------------
+
+/// Eixo de recorte da categoria: por publico ou por tipo de peca. E a mesma distincao que
+/// o site ja usa hoje, onde "Feminino" atravessa "Camisetas" e "Jeans".
+enum CategoryKind {
+  AUDIENCE
+  PRODUCT
+}
+
+enum CategoryAudience {
+  FEMININO
+  MASCULINO
+  UNISSEX
+}
+
+model Category {
+  id          String           @id @default(cuid())
+  storeId     String
+  slug        String
+  name        String
+  kind        CategoryKind
+  audience    CategoryAudience @default(UNISSEX)
+  description String?
+  image       String?
+  /// Subcategoria (escopo §7): uma categoria pode pertencer a outra.
+  parentId    String?
+  featured    Boolean          @default(false)
+  position    Int              @default(0)
+  deletedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  store    Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryTree")
+  products Product[]
+
+  @@unique([storeId, slug])
+  @@index([storeId, kind, position])
+  @@map("categories")
+}
+
+model Collection {
+  id          String    @id @default(cuid())
+  storeId     String
+  slug        String
+  name        String
+  tagline     String?
+  description String?
+  image       String?
+  badge       String?
+  featured    Boolean   @default(false)
+  position    Int       @default(0)
+  releasedAt  DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([storeId, slug])
+  @@index([storeId, position])
+  @@map("collections")
+}
+
+/// Status editorial do produto. So `ACTIVE` aparece na loja publica.
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model Product {
+  id           String           @id @default(cuid())
+  storeId      String
+  slug         String
+  name         String
+  sku          String
+  /// Descricao curta, usada em cards, listagem e busca.
+  description  String?
+  /// Texto editorial da pagina do produto.
+  story        String?
+  categoryId   String?
+  collectionId String?
+  brand        String?
+  status       ProductStatus    @default(DRAFT)
+  audience     CategoryAudience @default(UNISSEX)
+
+  price          Decimal  @db.Decimal(10, 2)
+  compareAtPrice Decimal? @db.Decimal(10, 2)
+  /// Custo e margem (escopo §7). Uso interno, nunca exposto na loja publica.
+  cost           Decimal? @db.Decimal(10, 2)
+
+  /// Peso e dimensoes para calculo de frete (escopo §7, §15).
+  weightGrams Int?
+  widthCm     Decimal? @db.Decimal(6, 2)
+  heightCm    Decimal? @db.Decimal(6, 2)
+  lengthCm    Decimal? @db.Decimal(6, 2)
+
+  tags         String[]
+  composition  String?
+  care         String[]
+  details      String[]
+  /// Medidas da peca: [{ label, value }]. O formato e o mesmo exibido na pagina hoje.
+  measurements Json?
+
+  ratingAvg   Decimal? @db.Decimal(3, 2)
+  reviewCount Int      @default(0)
+  soldCount   Int      @default(0)
+
+  featured     Boolean @default(false)
+  isNew        Boolean @default(false)
+  isBestSeller Boolean @default(false)
+
+  releasedAt DateTime?
+  /// Exclusao logica: um pedido antigo precisa continuar referenciando o produto vendido.
+  deletedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  store      Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  category   Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  collection Collection?      @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  colors     ProductColor[]
+  variants   ProductVariant[]
+  images     ProductImage[]
+
+  /// Nao ha `@@index` em `tags` porque indice GIN nao e expressavel no schema: entra por
+  /// SQL na migration quando a busca por tag virar gargalo (escopo §29).
+  @@unique([storeId, slug])
+  @@unique([storeId, sku])
+  @@index([storeId, status, featured])
+  @@index([storeId, categoryId])
+  @@index([storeId, collectionId])
+  @@index([storeId, isNew])
+  @@map("products")
+}
+
+/// Cor do produto. Existe como tabela porque a loja mostra a cor como amostra (hex) e,
+/// quando houver, uma foto propria daquela cor.
+model ProductColor {
+  id        String   @id @default(cuid())
+  storeId   String
+  productId String
+  name      String
+  slug      String
+  hex       String
+  image     String?
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store    Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product  Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variants ProductVariant[]
+  images   ProductImage[]
+
+  @@unique([productId, slug])
+  @@index([storeId, productId])
+  @@map("product_colors")
+}
+
+/// Variacao: a combinacao cor × tamanho, com SKU e estoque proprios (escopo §7, §8).
+/// E a unidade que o carrinho e o estoque referenciam.
+model ProductVariant {
+  id             String    @id @default(cuid())
+  storeId        String
+  productId      String
+  colorId        String?
+  size           String
+  sku            String
+  /// Preco proprio da variacao, quando difere do preco do produto.
+  price          Decimal?  @db.Decimal(10, 2)
+  compareAtPrice Decimal?  @db.Decimal(10, 2)
+  position       Int       @default(0)
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  store     Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product   Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color     ProductColor?       @relation(fields: [colorId], references: [id], onDelete: SetNull)
+  inventory Inventory?
+  movements InventoryMovement[]
+
+  @@unique([storeId, sku])
+  @@index([storeId, productId])
+  @@map("product_variants")
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  storeId   String
+  productId String
+  /// Quando a imagem pertence a uma cor especifica.
+  colorId   String?
+  url       String
+  alt       String?
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store   Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color   ProductColor? @relation(fields: [colorId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, productId, position])
+  @@map("product_images")
+}
+
+// ---------------------------------------------------------------------------
+// Estoque
+// ---------------------------------------------------------------------------
+
+/// Saldo por variacao. Uma linha por variacao — o saldo do produto e a soma.
+model Inventory {
+  id             String   @id @default(cuid())
+  storeId        String
+  variantId      String   @unique
+  quantity       Int      @default(0)
+  /// Reservado por carrinhos e checkouts em andamento (FASE 3).
+  reserved       Int      @default(0)
+  /// Pre-venda ou estoque negativo permitido (escopo §8). Padrao: nao vender sem estoque.
+  allowBackorder Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  store   Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, quantity])
+  @@map("inventory")
+}
+
+/// Motivo da movimentacao (escopo §8).
+enum InventoryMovementType {
+  PURCHASE
+  SALE
+  CANCELLATION
+  EXCHANGE
+  ADJUSTMENT
+  RETURN
+}
+
+/// Historico do estoque. Nada altera `Inventory` sem registrar aqui — e o que permite
+/// auditar divergencia (escopo §8).
+model InventoryMovement {
+  id        String                @id @default(cuid())
+  storeId   String
+  variantId String
+  type      InventoryMovementType
+  /// Positivo na entrada, negativo na saida.
+  quantity  Int
+  reason    String?
+  /// Usuario responsavel pelo ajuste.
+  userId    String?
+  /// Pedido que originou a movimentacao. A FK entra na FASE 2, com a tabela `orders`.
+  orderId   String?
+  createdAt DateTime              @default(now())
+
+  store   Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  user    User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, variantId, createdAt])
+  @@index([storeId, type])
+  @@map("inventory_movements")
+}

@@ -25,7 +25,7 @@ import type { FilterFacets, Product, ProductFilters } from '@/types';
  * ordenacao e paginacao. Manter isso em um lugar so evita que as tres listagens
  * divirjam com o tempo.
  */
-export function CatalogResults({
+export async function CatalogResults({
   basePath,
   filters,
   facets,
@@ -43,7 +43,7 @@ export function CatalogResults({
   className?: string;
 }) {
   const colorLabels = Object.fromEntries(
-    getColorOptions().map((color) => [color.slug, color.name]),
+    (await getColorOptions()).map((color) => [color.slug, color.name]),
   );
   const activeCount = countActiveFilters(filters);
 
@@ -74,8 +74,8 @@ export function CatalogResults({
           filters={filters}
           basePath={basePath}
           labels={{
-            categories: categoryLabels(),
-            collections: collectionLabels(),
+            categories: await categoryLabels(),
+            collections: await collectionLabels(),
             colors: colorLabels,
           }}
           className="mt-5"

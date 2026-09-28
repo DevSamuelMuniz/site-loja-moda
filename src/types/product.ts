@@ -8,7 +8,12 @@ export interface ProductColor {
   hex: string;
   /** Imagem propria da variante. Quando ausente, usa a imagem principal. */
   image?: string;
-  sku: string;
+  /**
+   * SKU da cor. Opcional de proposito: no banco o codigo pertence a variacao (cor ×
+   * tamanho), nao a cor. Onde a cor nao tem codigo, a interface cai para o SKU da variacao
+   * selecionada e depois para o do produto.
+   */
+  sku?: string;
   stock: number;
   /** Preco proprio da variante, quando difere do preco do produto. */
   price?: number;

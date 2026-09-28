@@ -1,7 +1,4 @@
 import { ecommerceConfig } from '@/config/ecommerce';
-import { categories as categoryData } from '@/data/categories';
-import { collections as collectionData } from '@/data/collections';
-import { products as productData } from '@/data/products';
 import {
   activeFilterCount,
   emptyFilters,
@@ -13,6 +10,7 @@ import {
   productPrice,
   sortProducts,
 } from '@/lib/catalog/filters';
+import { loadCatalog, type CatalogSnapshot } from '@/lib/catalog/source';
 import type {
   Category,
   Collection,
@@ -25,10 +23,12 @@ import type {
 /**
  * Repositorio do catalogo.
  *
- * Esta e a unica porta de entrada para produtos, categorias e colecoes. Hoje os
- * dados vem de arquivos em `src/data`, mas toda a leitura passa pelas funcoes
- * abaixo: migrar para Postgres, Supabase ou uma API significa reescrever somente
- * este modulo, mantendo as mesmas assinaturas para as paginas.
+ * Esta e a unica porta de entrada para produtos, categorias e colecoes. A origem e o
+ * banco (`src/lib/catalog/source.ts`); a logica de busca, filtro, ordenacao e facetas
+ * continua nas funcoes puras de `filters.ts`, operando sobre o snapshot.
+ *
+ * As funcoes sao assincronas porque a leitura vai ao banco. As paginas so precisam de
+ * `await` — o que elas renderizam nao mudou.
  */
 
 export interface CatalogDictionaries {
@@ -71,73 +71,97 @@ export function compareSizes(a: string, b: string): number {
   return Number(a) - Number(b);
 }
 
-export function allProducts(): Product[] {
-  return productData;
+function dictionariesOf(snapshot: CatalogSnapshot): CatalogDictionaries {
+  return {
+    categoryLabels: Object.fromEntries(
+      snapshot.categories.map((category) => [category.slug, category.name]),
+    ),
+    collectionLabels: Object.fromEntries(
+      snapshot.collections.map((collection) => [collection.slug, collection.name]),
+    ),
+  };
 }
 
-export function categoryLabels(): Record<string, string> {
-  return Object.fromEntries(categoryData.map((category) => [category.slug, category.name]));
+export async function allProducts(): Promise<Product[]> {
+  const snapshot = await loadCatalog();
+  return snapshot.products;
 }
 
-export function collectionLabels(): Record<string, string> {
-  return Object.fromEntries(collectionData.map((collection) => [collection.slug, collection.name]));
+export async function categoryLabels(): Promise<Record<string, string>> {
+  const snapshot = await loadCatalog();
+  return dictionariesOf(snapshot).categoryLabels;
 }
 
-export function dictionaries(): CatalogDictionaries {
-  return { categoryLabels: categoryLabels(), collectionLabels: collectionLabels() };
+export async function collectionLabels(): Promise<Record<string, string>> {
+  const snapshot = await loadCatalog();
+  return dictionariesOf(snapshot).collectionLabels;
 }
 
-export function getCategories(options: { featuredOnly?: boolean } = {}): Category[] {
+export async function dictionaries(): Promise<CatalogDictionaries> {
+  const snapshot = await loadCatalog();
+  return dictionariesOf(snapshot);
+}
+
+export async function getCategories(options: { featuredOnly?: boolean } = {}): Promise<Category[]> {
+  const { categories } = await loadCatalog();
   const list = options.featuredOnly
-    ? categoryData.filter((category) => category.featured === true)
-    : categoryData;
+    ? categories.filter((category) => category.featured === true)
+    : categories;
   return [...list].sort((a, b) => a.order - b.order);
 }
 
-export function getCategoryBySlug(slug: string): Category | undefined {
-  return categoryData.find((category) => category.slug === slug);
+export async function getCategoryBySlug(slug: string): Promise<Category | undefined> {
+  const { categories } = await loadCatalog();
+  return categories.find((category) => category.slug === slug);
 }
 
-export function getCollections(options: { featuredOnly?: boolean } = {}): Collection[] {
+export async function getCollections(
+  options: { featuredOnly?: boolean } = {},
+): Promise<Collection[]> {
+  const { collections } = await loadCatalog();
   const list = options.featuredOnly
-    ? collectionData.filter((collection) => collection.featured === true)
-    : collectionData;
+    ? collections.filter((collection) => collection.featured === true)
+    : collections;
   return [...list].sort((a, b) => a.order - b.order);
 }
 
-export function getCollectionBySlug(slug: string): Collection | undefined {
-  return collectionData.find((collection) => collection.slug === slug);
+export async function getCollectionBySlug(slug: string): Promise<Collection | undefined> {
+  const { collections } = await loadCatalog();
+  return collections.find((collection) => collection.slug === slug);
 }
 
-export function getProductBySlug(slug: string): Product | undefined {
-  return productData.find((product) => product.slug === slug);
+export async function getProductBySlug(slug: string): Promise<Product | undefined> {
+  const { products } = await loadCatalog();
+  return products.find((product) => product.slug === slug);
 }
 
-export function getProductsBySlugs(slugs: string[]): Product[] {
+export async function getProductsBySlugs(slugs: string[]): Promise<Product[]> {
+  const { products } = await loadCatalog();
+  const bySlug = new Map(products.map((product) => [product.slug, product]));
+
   return slugs
-    .map((slug) => getProductBySlug(slug))
+    .map((slug) => bySlug.get(slug))
     .filter((product): product is Product => product !== undefined);
 }
 
 /** Tamanhos disponiveis no catalogo, na ordem canonica. */
-export function getSizeOptions(): string[] {
+export async function getSizeOptions(): Promise<string[]> {
+  const { products } = await loadCatalog();
   const sizes = new Set<string>();
-  for (const product of productData) {
+  for (const product of products) {
     for (const size of product.sizes) sizes.add(size);
   }
   return [...sizes].sort(compareSizes);
 }
 
 /** Cores disponiveis no catalogo, com a amostra de cada uma. */
-export function getColorOptions(): Array<{
-  slug: string;
-  name: string;
-  hex: string;
-  count: number;
-}> {
+export async function getColorOptions(): Promise<
+  Array<{ slug: string; name: string; hex: string; count: number }>
+> {
+  const { products } = await loadCatalog();
   const map = new Map<string, { slug: string; name: string; hex: string; count: number }>();
 
-  for (const product of productData) {
+  for (const product of products) {
     for (const color of product.colors) {
       const existing = map.get(color.slug);
       if (existing) {
@@ -152,9 +176,10 @@ export function getColorOptions(): Array<{
 }
 
 /** Tags do catalogo, ordenadas por frequencia e depois alfabeticamente. */
-export function getTagOptions(): Array<{ value: string; count: number }> {
+export async function getTagOptions(): Promise<Array<{ value: string; count: number }>> {
+  const { products } = await loadCatalog();
   const map = new Map<string, number>();
-  for (const product of productData) {
+  for (const product of products) {
     for (const tag of product.tags) map.set(tag, (map.get(tag) ?? 0) + 1);
   }
   return [...map.entries()]
@@ -162,17 +187,21 @@ export function getTagOptions(): Array<{ value: string; count: number }> {
     .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value, 'pt-BR'));
 }
 
-export function getProducts(filters: ProductFilters = emptyFilters): Product[] {
-  return sortProducts(filterProducts(productData, filters, dictionaries()), filters.sort);
+export async function getProducts(filters: ProductFilters = emptyFilters): Promise<Product[]> {
+  const snapshot = await loadCatalog();
+  return sortProducts(
+    filterProducts(snapshot.products, filters, dictionariesOf(snapshot)),
+    filters.sort,
+  );
 }
 
 /** Resultado paginado, com a contagem total antes do recorte de pagina. */
-export function queryProducts(
+export async function queryProducts(
   filters: ProductFilters = emptyFilters,
   page = 1,
   pageSize: number = ecommerceConfig.catalog.pageSize,
-): Paginated<Product> {
-  const filtered = getProducts(filters);
+): Promise<Paginated<Product>> {
+  const filtered = await getProducts(filters);
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const current = Math.min(Math.max(1, page), pageCount);
   const start = (current - 1) * pageSize;
@@ -189,65 +218,66 @@ export function queryProducts(
 /**
  * Contagem de resultados por valor de filtro.
  *
- * Cada dimensao e contada ignorando os proprios filtros daquela dimensao, para que
- * seja possivel ver as alternativas disponiveis sem desmarcar o que ja esta ativo.
+ * Cada dimensao e contada ignorando os proprios filtros daquela dimensao, para que seja
+ * possivel ver as alternativas disponiveis sem desmarcar o que ja esta ativo.
  */
-export function getFacets(filters: ProductFilters = emptyFilters): FilterFacets {
-  const dict = dictionaries();
+export async function getFacets(filters: ProductFilters = emptyFilters): Promise<FilterFacets> {
+  const snapshot = await loadCatalog();
+  const { products } = snapshot;
+  const dict = dictionariesOf(snapshot);
+
   const count = (
     dimension: Parameters<typeof filterProducts>[3],
     value: string,
     dimensionKey: string,
   ) =>
     filterProducts(
-      productData,
+      products,
       { ...filters, [dimensionKey]: [value] } as ProductFilters,
       dict,
       dimension,
     ).length;
 
-  const categories: FacetValue[] = getCategories().map((category) => ({
+  const categories: FacetValue[] = (await getCategories()).map((category) => ({
     value: category.slug,
     label: category.name,
     count: count('categories', category.slug, 'categories'),
   }));
 
-  const collections: FacetValue[] = getCollections().map((collection) => ({
+  const collections: FacetValue[] = (await getCollections()).map((collection) => ({
     value: collection.slug,
     label: collection.name,
-    count: filterProducts(productData, filters, dict, 'collections').filter((product) =>
+    count: filterProducts(products, filters, dict, 'collections').filter((product) =>
       collection.slug === 'sale'
         ? productIsOnSale(product)
         : product.collection === collection.slug,
     ).length,
   }));
 
-  const sizes: FacetValue[] = getSizeOptions().map((size) => ({
+  const sizes: FacetValue[] = (await getSizeOptions()).map((size) => ({
     value: size,
     label: size,
-    count: filterProducts(productData, filters, dict, 'sizes').filter((product) =>
+    count: filterProducts(products, filters, dict, 'sizes').filter((product) =>
       product.sizes.includes(size),
     ).length,
   }));
 
-  const colors: FacetValue[] = getColorOptions().map((color) => ({
+  const colors: FacetValue[] = (await getColorOptions()).map((color) => ({
     value: color.slug,
     label: color.name,
     hex: color.hex,
-    count: filterProducts(productData, filters, dict, 'colors').filter((product) =>
+    count: filterProducts(products, filters, dict, 'colors').filter((product) =>
       product.colors.some((entry) => entry.slug === color.slug),
     ).length,
   }));
 
-  const tags: FacetValue[] = getTagOptions()
-    .slice(0, 12)
-    .map((tag) => ({
-      value: tag.value,
-      label: tag.value,
-      count: filterProducts(productData, filters, dict, 'tags').filter((product) =>
-        product.tags.includes(tag.value),
-      ).length,
-    }));
+  const tags: FacetValue[] = (await getTagOptions()).slice(0, 12).map((tag) => ({
+    value: tag.value,
+    label: tag.value,
+    count: filterProducts(products, filters, dict, 'tags').filter((product) =>
+      product.tags.includes(tag.value),
+    ).length,
+  }));
 
   return {
     categories,
@@ -255,8 +285,8 @@ export function getFacets(filters: ProductFilters = emptyFilters): FilterFacets 
     sizes,
     colors,
     tags,
-    priceRange: priceBounds(productData),
-    total: filterProducts(productData, filters, dict).length,
+    priceRange: priceBounds(products),
+    total: filterProducts(products, filters, dict).length,
   };
 }
 
@@ -267,14 +297,15 @@ export function countActiveFilters(filters: ProductFilters): number {
 /**
  * Produtos relacionados.
  *
- * Prioriza quem compartilha colecao e depois quem compartilha categoria ou tag, o
- * que mantem a recomendacao coerente com a peca que a pessoa esta vendo.
+ * Prioriza quem compartilha colecao e depois quem compartilha categoria ou tag, o que
+ * mantem a recomendacao coerente com a peca que a pessoa esta vendo.
  */
-export function getRelatedProducts(
+export async function getRelatedProducts(
   product: Product,
   limit = ecommerceConfig.catalog.relatedLimit,
-): Product[] {
-  const others = productData.filter((entry) => entry.slug !== product.slug);
+): Promise<Product[]> {
+  const { products } = await loadCatalog();
+  const others = products.filter((entry) => entry.slug !== product.slug);
 
   const scored = others.map((candidate) => {
     let score = 0;
@@ -298,28 +329,39 @@ export function getRelatedProducts(
     .map((entry) => entry.candidate);
 }
 
-export function getFeaturedProducts(limit = ecommerceConfig.catalog.featuredLimit): Product[] {
+export async function getFeaturedProducts(
+  limit = ecommerceConfig.catalog.featuredLimit,
+): Promise<Product[]> {
+  const { products } = await loadCatalog();
   return sortProducts(
-    productData.filter((product) => product.featured === true),
+    products.filter((product) => product.featured === true),
     'relevancia',
   ).slice(0, limit);
 }
 
-export function getNewArrivals(limit = ecommerceConfig.catalog.newArrivalsLimit): Product[] {
+export async function getNewArrivals(
+  limit = ecommerceConfig.catalog.newArrivalsLimit,
+): Promise<Product[]> {
+  const { products } = await loadCatalog();
   return sortProducts(
-    productData.filter((product) => product.isNew === true),
+    products.filter((product) => product.isNew === true),
     'recentes',
   ).slice(0, limit);
 }
 
-export function getSaleProducts(limit = ecommerceConfig.catalog.saleLimit): Product[] {
-  return sortProducts(productData.filter(productIsOnSale), 'maior-preco').slice(0, limit);
+export async function getSaleProducts(
+  limit = ecommerceConfig.catalog.saleLimit,
+): Promise<Product[]> {
+  const { products } = await loadCatalog();
+  return sortProducts(products.filter(productIsOnSale), 'maior-preco').slice(0, limit);
 }
 
 /** Documento enxuto para a busca instantanea: nao carrega a descricao completa. */
-export function getSearchDocuments(): SearchDocument[] {
-  const dict = dictionaries();
-  return productData.map((product) => ({
+export async function getSearchDocuments(): Promise<SearchDocument[]> {
+  const snapshot = await loadCatalog();
+  const dict = dictionariesOf(snapshot);
+
+  return snapshot.products.map((product) => ({
     slug: product.slug,
     name: product.name,
     category: product.category,
@@ -336,28 +378,32 @@ export function getSearchDocuments(): SearchDocument[] {
   }));
 }
 
-export function searchProducts(query: string, limit = 12): Product[] {
-  const dict = dictionaries();
+export async function searchProducts(query: string, limit = 12): Promise<Product[]> {
+  const snapshot = await loadCatalog();
+  const dict = dictionariesOf(snapshot);
+
   return sortProducts(
-    productData.filter((product) => matchesQuery(product, query, dict)),
+    snapshot.products.filter((product) => matchesQuery(product, query, dict)),
     query.trim() ? 'relevancia' : 'recentes',
   ).slice(0, limit);
 }
 
 /** Numeros do catalogo, usados em chamadas de texto e no rodape. */
-export function getCatalogSummary(): {
+export async function getCatalogSummary(): Promise<{
   productCount: number;
   categoryCount: number;
   collectionCount: number;
   priceRange: { min: number; max: number };
   onSaleCount: number;
-} {
+}> {
+  const snapshot = await loadCatalog();
+
   return {
-    productCount: productData.length,
-    categoryCount: categoryData.length,
-    collectionCount: collectionData.length,
-    priceRange: priceBounds(productData),
-    onSaleCount: productData.filter(productIsOnSale).length,
+    productCount: snapshot.products.length,
+    categoryCount: snapshot.categories.length,
+    collectionCount: snapshot.collections.length,
+    priceRange: priceBounds(snapshot.products),
+    onSaleCount: snapshot.products.filter(productIsOnSale).length,
   };
 }
 

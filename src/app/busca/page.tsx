@@ -48,8 +48,8 @@ export default async function SearchPage({
   const filters = readFilters(params);
   const page = readPage(params);
 
-  const facets = getFacets(filters);
-  const result = queryProducts(filters, page);
+  const facets = await getFacets(filters);
+  const result = await queryProducts(filters, page);
   const term = filters.query;
 
   return (

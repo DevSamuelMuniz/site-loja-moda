@@ -16,9 +16,9 @@ export const metadata: Metadata = buildMetadata({
   path: '/colecoes',
 });
 
-export default function CollectionsPage() {
-  const collections = getCollections();
-  const products = getProducts();
+export default async function CollectionsPage() {
+  const collections = await getCollections();
+  const products = await getProducts();
 
   return (
     <Container className="py-10 lg:py-14">

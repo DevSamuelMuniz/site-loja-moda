@@ -67,9 +67,9 @@ export const viewport: Viewport = {
   colorScheme: 'light',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const commerceIndex = getCommerceIndex();
-  const searchIndex = getSearchDocuments();
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const commerceIndex = await getCommerceIndex();
+  const searchIndex = await getSearchDocuments();
 
   return (
     <html lang={seoConfig.languageTag} className={fontVariables}>

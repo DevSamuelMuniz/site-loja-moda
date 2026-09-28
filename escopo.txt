@@ -1,0 +1,1054 @@
+DOCUMENTAÇÃO DO PROJETO — PLATAFORMA DE E-COMMERCE PARA LOJAS DE MODA
+
+1. VISÃO GERAL
+
+Este projeto é uma plataforma moderna de e-commerce voltada inicialmente para lojas de moda e vestuário.
+
+O objetivo não é criar apenas um site institucional ou uma vitrine estática. O projeto deve evoluir para uma plataforma completa de vendas online, permitindo que uma loja cadastre produtos, controle estoque, receba pedidos, gerencie clientes, configure sua identidade visual e acompanhe suas vendas por meio de um painel administrativo.
+
+A aplicação atual funciona como um modelo/base visual de uma loja de moda. A partir dela, o sistema deverá ser transformado em uma solução funcional, escalável, configurável e preparada para ser reutilizada por diferentes lojas.
+
+O projeto deve preservar a qualidade visual e a experiência de usuário do site atual, mas adicionar toda a infraestrutura necessária para operação real de um e-commerce.
+
+
+2. OBJETIVO PRINCIPAL
+
+Construir uma plataforma de e-commerce configurável para lojas de moda, com:
+
+- Loja pública
+- Catálogo de produtos
+- Categorias
+- Busca
+- Filtros
+- Página detalhada de produto
+- Variações de produtos
+- Controle de estoque
+- Carrinho
+- Checkout
+- Pedidos
+- Clientes
+- Pagamentos
+- Frete
+- Cupons
+- Favoritos
+- Avaliações
+- Painel administrativo
+- Configuração visual da loja
+- Analytics e relatórios
+- Integrações futuras com WhatsApp, e-mail e automações
+- Arquitetura preparada para múltiplas lojas (multi-tenant)
+
+
+3. PRINCÍPIO FUNDAMENTAL
+
+O projeto deve ser tratado como um PRODUTO/SISTEMA, e não como uma página web isolada.
+
+Não criar funcionalidades simuladas apenas visualmente quando elas deveriam estar conectadas ao backend.
+
+Sempre que uma funcionalidade depender de dados persistentes, ela deve ser estruturada para funcionar com banco de dados, autenticação, regras de negócio e APIs.
+
+Exemplo:
+
+ERRADO:
+- Criar um produto apenas em um array fixo no frontend.
+
+CORRETO:
+- Produto armazenado no banco.
+- Produto carregado pela API.
+- Produto associado a uma loja.
+- Produto possui estoque e variações.
+- Alterações feitas pelo administrador refletem automaticamente na loja pública.
+
+
+4. SITE ATUAL
+
+O projeto já possui uma interface de loja de moda com identidade visual moderna.
+
+URL de referência atual:
+https://site-loja-moda.vercel.app/
+
+Essa versão deve ser considerada a referência visual e estrutural inicial.
+
+A evolução do sistema NÃO deve destruir o design existente sem necessidade.
+
+A IA deve preservar:
+- Hierarquia visual
+- Responsividade
+- Navegação
+- Identidade da loja
+- Experiência de compra
+- Componentização
+- Organização das páginas
+- Estética moderna de e-commerce de moda
+
+Ao adicionar funcionalidades, a interface deve continuar parecendo um produto profissional e coerente.
+
+
+5. PÚBLICO-ALVO
+
+O sistema é destinado principalmente a:
+
+- Lojas de roupas
+- Boutiques
+- Marcas independentes
+- Lojas de moda feminina
+- Lojas de moda masculina
+- Lojas de moda infantil
+- Lojas de acessórios
+- Lojas de calçados
+- Pequenos e médios negócios de moda
+
+A arquitetura deve ser suficientemente flexível para futuramente atender outros segmentos de varejo.
+
+
+6. ARQUITETURA FUNCIONAL
+
+A aplicação deve ser dividida conceitualmente em:
+
+LOJA PÚBLICA
+- Home
+- Catálogo
+- Categorias
+- Busca
+- Filtros
+- Produto
+- Coleções
+- Looks
+- Favoritos
+- Carrinho
+- Checkout
+- Acompanhamento de pedido
+- Conta do cliente
+
+ÁREA DO CLIENTE
+- Perfil
+- Pedidos
+- Detalhes do pedido
+- Endereços
+- Favoritos
+- Cupons
+- Dados pessoais
+
+PAINEL ADMINISTRATIVO
+- Dashboard
+- Produtos
+- Categorias
+- Coleções
+- Estoque
+- Pedidos
+- Clientes
+- Cupons
+- Banners
+- Conteúdo da home
+- Avaliações
+- Relatórios
+- Configurações
+- Aparência
+- Integrações
+
+
+7. PRODUTOS
+
+O cadastro de produtos deve ser completo e flexível.
+
+Cada produto pode possuir:
+
+- ID
+- Nome
+- SKU
+- Descrição
+- Descrição curta
+- Categoria
+- Subcategoria
+- Coleção
+- Marca
+- Tags
+- Preço
+- Preço promocional
+- Custo
+- Margem
+- Status
+- Imagens
+- Vídeos
+- Peso
+- Dimensões
+- Data de criação
+- Data de atualização
+- Destaque
+- Novidade
+- Mais vendido
+
+O sistema deve permitir variações.
+
+Exemplo:
+
+Produto:
+Camiseta Essential
+
+Variações:
+- Preto / P
+- Preto / M
+- Preto / G
+- Branco / P
+- Branco / M
+- Branco / G
+
+Cada variação deve possuir estoque próprio e, quando necessário, SKU próprio.
+
+
+8. ESTOQUE
+
+O estoque deve ser controlado por produto e por variação.
+
+Exemplo:
+
+Camiseta Essential
+Preto / M
+Estoque: 12
+
+O sistema deve registrar movimentações:
+
+- Entrada
+- Venda
+- Cancelamento
+- Troca
+- Ajuste manual
+- Devolução
+
+Cada movimentação deve poder registrar:
+- Data
+- Usuário responsável
+- Tipo
+- Quantidade
+- Motivo
+- Referência ao pedido, quando aplicável
+
+O sistema deve impedir venda de itens sem estoque, salvo quando o produto estiver explicitamente configurado para aceitar pré-venda ou estoque negativo.
+
+
+9. CATÁLOGO E BUSCA
+
+O catálogo deve permitir:
+
+- Categorias
+- Subcategorias
+- Coleções
+- Ordenação
+- Filtro por preço
+- Filtro por tamanho
+- Filtro por cor
+- Filtro por disponibilidade
+- Filtro por coleção
+- Busca por nome
+- Busca por SKU
+- Busca por tags
+
+A busca deve ser preparada para evoluir para busca semântica e sugestões.
+
+
+10. PÁGINA DO PRODUTO
+
+A página de produto deve apresentar:
+
+- Galeria de imagens
+- Vídeo, quando existir
+- Nome
+- Preço
+- Preço promocional
+- Parcelamento
+- Disponibilidade
+- Cores
+- Tamanhos
+- Guia de medidas
+- Descrição
+- Composição
+- Cuidados
+- Avaliações
+- Perguntas
+- Produtos relacionados
+- Produtos recomendados
+- Botão de adicionar à sacola
+- Favoritar
+- Compartilhar
+
+O botão de compra deve respeitar a disponibilidade da variação selecionada.
+
+
+11. CARRINHO
+
+O carrinho deve ser persistente.
+
+Deve permitir:
+
+- Adicionar produto
+- Alterar quantidade
+- Remover produto
+- Alterar variação
+- Aplicar cupom
+- Calcular subtotal
+- Calcular frete
+- Exibir descontos
+- Exibir total
+- Continuar comprando
+- Ir para checkout
+
+O carrinho deve ser associado ao usuário autenticado quando possível e também funcionar para visitantes.
+
+
+12. CHECKOUT
+
+O checkout deve possuir fluxo simples e objetivo.
+
+Etapas sugeridas:
+
+1. Identificação
+2. Endereço
+3. Entrega
+4. Pagamento
+5. Revisão
+6. Confirmação
+
+O sistema deve permitir compra como visitante, caso essa opção esteja habilitada pela loja.
+
+O checkout deve validar:
+- Estoque
+- Dados do cliente
+- Endereço
+- Frete
+- Cupom
+- Valores
+- Pagamento
+
+
+13. PEDIDOS
+
+Cada compra deve gerar um pedido único.
+
+Exemplo:
+
+Pedido #AUR-1024
+
+Status possíveis:
+
+- Aguardando pagamento
+- Pagamento aprovado
+- Em preparação
+- Enviado
+- Entregue
+- Cancelado
+- Reembolsado
+- Devolvido
+
+O pedido deve armazenar:
+- Cliente
+- Produtos
+- Variações
+- Quantidades
+- Preços
+- Descontos
+- Frete
+- Endereço
+- Forma de pagamento
+- Status
+- Histórico de alterações
+- Datas
+
+
+14. PAGAMENTOS
+
+A arquitetura deve ser preparada para integração com gateways.
+
+Possíveis integrações futuras:
+- Mercado Pago
+- Stripe
+- Asaas
+- Pagar.me
+
+A aplicação não deve assumir que um único gateway será utilizado.
+
+O método de pagamento deve ser configurável por loja.
+
+Exemplos:
+- PIX
+- Cartão de crédito
+- Cartão de débito
+- Boleto
+
+O status do pagamento deve ser sincronizado com o pedido por meio de webhooks quando o gateway oferecer suporte.
+
+
+15. FRETE
+
+O sistema deve permitir diferentes estratégias:
+
+- Frete grátis
+- Retirada na loja
+- Entrega própria
+- Valor fixo
+- Faixas por preço
+- Faixas por peso
+- Cálculo por CEP
+
+A arquitetura deve permitir futuras integrações com serviços de logística e cálculo de frete.
+
+
+16. CLIENTES
+
+O sistema deve possuir cadastro de clientes.
+
+Informações possíveis:
+- Nome
+- E-mail
+- Telefone
+- CPF, quando necessário e legalmente aplicável
+- Data de cadastro
+- Endereços
+- Pedidos
+- Total gasto
+- Última compra
+- Favoritos
+- Cupons
+- Consentimentos
+
+O sistema deve respeitar boas práticas de segurança e privacidade.
+
+
+17. FAVORITOS
+
+Usuários podem salvar produtos.
+
+O sistema deve permitir:
+- Adicionar aos favoritos
+- Remover
+- Visualizar favoritos
+- Adicionar favorito à sacola
+
+Para visitantes, pode ser utilizado armazenamento local até que o usuário faça login.
+
+
+18. CUPONS
+
+O administrador deve poder criar cupons.
+
+Configurações possíveis:
+- Código
+- Percentual de desconto
+- Valor fixo
+- Frete grátis
+- Valor mínimo
+- Data inicial
+- Data final
+- Limite de utilização
+- Limite por cliente
+- Categorias aplicáveis
+- Produtos aplicáveis
+- Status
+
+
+19. AVALIAÇÕES
+
+Clientes que compraram determinado produto poderão avaliá-lo.
+
+Avaliações podem possuir:
+- Nota
+- Comentário
+- Imagem
+- Data
+- Cliente
+- Produto
+
+A loja deve poder moderar avaliações.
+
+
+20. PAINEL ADMINISTRATIVO
+
+O painel administrativo é uma das partes mais importantes do projeto.
+
+O administrador deve conseguir operar a loja sem editar código.
+
+Principais módulos:
+
+Dashboard
+- Faturamento
+- Pedidos
+- Ticket médio
+- Produtos vendidos
+- Clientes
+- Produtos com estoque baixo
+- Gráficos
+- Períodos configuráveis
+
+Produtos
+- Criar
+- Editar
+- Excluir
+- Duplicar
+- Ativar/desativar
+- Gerenciar imagens
+- Gerenciar variações
+
+Pedidos
+- Listagem
+- Filtros
+- Detalhes
+- Alteração de status
+- Cancelamento
+- Reembolso
+- Histórico
+
+Clientes
+- Cadastro
+- Histórico
+- Pedidos
+- Segmentação
+
+Estoque
+- Saldo
+- Movimentações
+- Ajustes
+- Alertas
+
+Marketing
+- Cupons
+- Banners
+- Campanhas
+- Newsletter
+- Carrinho abandonado
+
+Conteúdo
+- Home
+- Banners
+- Coleções
+- Looks
+- Depoimentos
+- FAQ
+
+
+21. PERSONALIZAÇÃO DA LOJA
+
+A plataforma deve permitir configurar a identidade visual sem alterar código.
+
+Configurações:
+
+- Logo
+- Favicon
+- Nome da loja
+- Descrição
+- Cor primária
+- Cor secundária
+- Cor de destaque
+- Tipografia
+- Estilo dos botões
+- Bordas
+- Espaçamentos
+- Banner principal
+- Imagens
+- Textos
+- Categorias
+- Produtos em destaque
+- Coleções
+- Depoimentos
+- FAQ
+- Redes sociais
+
+A estrutura visual deve ser baseada em componentes configuráveis.
+
+
+22. MULTI-TENANT
+
+A arquitetura deve ser preparada para atender várias lojas usando a mesma aplicação.
+
+Exemplo:
+
+Loja A
+cliente1.plataforma.com
+
+Loja B
+cliente2.plataforma.com
+
+Também deve ser possível utilizar domínio próprio no futuro:
+
+www.lojaa.com.br
+www.lojab.com.br
+
+Cada loja deve possuir seus próprios:
+- Produtos
+- Clientes
+- Pedidos
+- Estoque
+- Cupons
+- Configurações
+- Conteúdo
+- Integrações
+
+Nenhuma loja pode acessar dados de outra loja.
+
+O tenant/store_id deve estar presente nas entidades que precisam de isolamento.
+
+
+23. AUTENTICAÇÃO E PERMISSÕES
+
+O sistema deve possuir autenticação segura.
+
+Tipos de usuários:
+
+CLIENTE
+- Comprar
+- Gerenciar conta
+- Ver pedidos
+- Favoritar
+
+ADMINISTRADOR
+- Gerenciar loja
+- Produtos
+- Pedidos
+- Clientes
+- Estoque
+- Configurações
+
+Futuramente:
+
+GERENTE
+- Produtos
+- Pedidos
+- Estoque
+- Relatórios
+
+OPERADOR
+- Operações limitadas
+
+As permissões devem ser implementadas no backend, não apenas escondendo elementos no frontend.
+
+
+24. RECUPERAÇÃO DE CARRINHO
+
+O sistema deve registrar carrinhos abandonados quando possível.
+
+Exemplo:
+
+Cliente adicionou:
+- Vestido Flow
+- Bolsa Minimal
+
+Saiu do checkout.
+
+O administrador poderá visualizar:
+- Cliente
+- Produtos
+- Valor
+- Data
+- Tempo desde abandono
+
+No futuro, isso poderá gerar automações por:
+- E-mail
+- WhatsApp
+- Notificação
+
+
+25. WHATSAPP
+
+O sistema deve ser preparado para integração com WhatsApp.
+
+Possíveis usos:
+
+- Atendimento
+- Dúvida sobre produto
+- Confirmação de pedido
+- Atualização de entrega
+- Recuperação de carrinho
+- Campanhas
+
+A integração deve ser desacoplada para permitir troca do provedor.
+
+
+26. RELATÓRIOS
+
+O administrador deve ter acesso a:
+
+- Faturamento
+- Vendas por período
+- Vendas por produto
+- Vendas por categoria
+- Vendas por coleção
+- Produtos mais vendidos
+- Produtos com baixo estoque
+- Clientes
+- Ticket médio
+- Pedidos cancelados
+- Cupons utilizados
+- Conversão, quando houver dados suficientes
+
+
+27. ANALYTICS
+
+O projeto deve estar preparado para integração com analytics.
+
+Eventos importantes:
+
+- Visualização de produto
+- Busca
+- Adição ao carrinho
+- Remoção do carrinho
+- Início do checkout
+- Adição de endereço
+- Seleção de pagamento
+- Compra
+- Uso de cupom
+- Login
+- Cadastro
+- Favorito
+
+O sistema deve evitar duplicidade de eventos.
+
+
+28. RESPONSIVIDADE
+
+A loja deve funcionar muito bem em:
+
+- Desktop
+- Tablet
+- Celular
+
+Mobile é prioridade.
+
+A interface deve considerar:
+- Navegação por toque
+- Botões adequados
+- Imagens responsivas
+- Checkout simples
+- Carrinho acessível
+- Menu mobile
+- Performance
+
+
+29. PERFORMANCE
+
+Priorizar:
+
+- Server-side rendering quando fizer sentido
+- Cache
+- Imagens otimizadas
+- Lazy loading
+- Code splitting
+- Minimização de JavaScript desnecessário
+- Consultas eficientes ao banco
+- Paginação
+- Busca otimizada
+
+Não carregar dados desnecessários.
+
+
+30. SEGURANÇA
+
+A aplicação deve considerar:
+
+- Autenticação segura
+- Autorização no backend
+- Validação de dados
+- Proteção contra SQL Injection
+- Proteção contra XSS
+- Proteção contra CSRF quando aplicável
+- Rate limiting
+- Sanitização
+- Proteção de webhooks
+- Controle de acesso por tenant
+- Variáveis sensíveis apenas no backend
+- Logs sem expor dados sensíveis
+
+
+31. PRIVACIDADE E LGPD
+
+Como a aplicação será utilizada no Brasil, deve ser preparada para requisitos de privacidade.
+
+Considerar:
+- Consentimento quando necessário
+- Política de privacidade
+- Termos de uso
+- Cookies
+- Dados pessoais
+- Solicitação de exclusão
+- Controle de dados
+- Minimização de dados
+
+
+32. BANCO DE DADOS
+
+O banco deve ser relacional e estruturado para crescimento.
+
+Entidades iniciais sugeridas:
+
+stores
+users
+customers
+products
+product_variants
+categories
+collections
+product_images
+inventory
+inventory_movements
+carts
+cart_items
+orders
+order_items
+payments
+shipping_methods
+addresses
+coupons
+coupon_usages
+favorites
+reviews
+banners
+pages
+settings
+audit_logs
+
+As relações devem ser consistentes e possuir índices adequados.
+
+
+33. API E BACKEND
+
+O frontend não deve acessar diretamente informações sensíveis.
+
+Utilizar uma camada de backend/API para:
+
+- Produtos
+- Estoque
+- Pedidos
+- Clientes
+- Pagamentos
+- Cupons
+- Administração
+- Configurações
+
+Todas as operações devem validar autenticação, autorização e tenant.
+
+
+34. COMPONENTIZAÇÃO
+
+O projeto deve utilizar componentes reutilizáveis.
+
+Exemplos:
+
+ProductCard
+ProductGallery
+ProductVariantSelector
+SizeSelector
+ColorSelector
+CartDrawer
+CartItem
+CheckoutForm
+OrderSummary
+Header
+Footer
+Search
+FilterSidebar
+AdminSidebar
+AdminTable
+DashboardCard
+Modal
+Toast
+Button
+Input
+Select
+DataTable
+
+Evitar duplicação de código.
+
+
+35. DESIGN SYSTEM
+
+Criar tokens para:
+
+- Cores
+- Tipografia
+- Espaçamentos
+- Radius
+- Sombras
+- Tamanhos
+- Breakpoints
+
+A identidade visual da loja deve ser configurável sem modificar componentes individualmente.
+
+
+36. FLEXIBILIDADE
+
+A plataforma deve evitar valores hardcoded.
+
+Não colocar diretamente no código:
+
+- Nome da loja
+- Logo
+- Cores
+- Preços
+- Produtos
+- Categorias
+- Textos
+- Banners
+- Links de redes sociais
+
+Esses dados devem vir de configuração, banco de dados ou CMS interno quando aplicável.
+
+
+37. ESCALABILIDADE
+
+O projeto deve começar simples, mas não deve ser construído de maneira descartável.
+
+A arquitetura deve permitir futuramente:
+
+- Multi-tenant
+- Domínio próprio
+- Múltiplos administradores
+- Integração com marketplaces
+- ERP
+- CRM
+- WhatsApp
+- E-mail marketing
+- Fidelidade
+- Assinaturas
+- Relatórios avançados
+- IA
+- Recomendação de produtos
+- Busca inteligente
+
+
+38. EXPERIÊNCIA DO USUÁRIO
+
+O objetivo é que o cliente consiga:
+
+1. Entrar na loja.
+2. Encontrar um produto.
+3. Escolher cor/tamanho.
+4. Adicionar à sacola.
+5. Informar endereço.
+6. Escolher entrega.
+7. Pagar.
+8. Receber confirmação.
+9. Acompanhar o pedido.
+
+Esse fluxo deve ser simples, rápido e sem etapas desnecessárias.
+
+
+39. EXPERIÊNCIA DO ADMINISTRADOR
+
+O lojista deve conseguir:
+
+1. Criar produto.
+2. Adicionar fotos.
+3. Criar variações.
+4. Definir estoque.
+5. Publicar.
+6. Receber pedidos.
+7. Atualizar status.
+8. Controlar estoque.
+9. Visualizar clientes.
+10. Criar cupons.
+11. Alterar aparência.
+12. Analisar vendas.
+
+Tudo isso sem necessidade de conhecimento técnico.
+
+
+40. PRINCÍPIO DE DESENVOLVIMENTO PARA IA
+
+Ao modificar ou desenvolver este projeto, a IA deve:
+
+- Ler este documento antes de implementar funcionalidades.
+- Entender que o projeto é uma plataforma de e-commerce.
+- Preservar funcionalidades existentes.
+- Evitar reescrever partes estáveis sem necessidade.
+- Não criar dados fictícios como substituto de backend real.
+- Não implementar apenas interfaces falsas.
+- Priorizar arquitetura sustentável.
+- Reutilizar componentes.
+- Manter responsividade.
+- Manter acessibilidade.
+- Validar dados no frontend e backend.
+- Considerar segurança.
+- Considerar multi-tenant desde a modelagem quando aplicável.
+- Criar código organizado e tipado.
+- Evitar dependências desnecessárias.
+- Documentar decisões importantes.
+- Não quebrar funcionalidades existentes.
+- Testar fluxos críticos após alterações.
+
+
+41. ROADMAP SUGERIDO
+
+FASE 1 — FUNDAÇÃO
+- Estrutura do backend
+- Banco de dados
+- Autenticação
+- Modelagem de loja
+- Produtos
+- Categorias
+- Variações
+
+FASE 2 — OPERAÇÃO
+- Estoque
+- Carrinho
+- Pedidos
+- Clientes
+- Admin
+
+FASE 3 — VENDA
+- Checkout
+- Pagamentos
+- Frete
+- Cupons
+
+FASE 4 — CRESCIMENTO
+- Avaliações
+- Analytics
+- WhatsApp
+- Carrinho abandonado
+- Relatórios
+
+FASE 5 — PLATAFORMA
+- Multi-tenant
+- Domínio próprio
+- Personalização completa
+- Múltiplos usuários
+- Integrações externas
+
+
+42. VISÃO DE LONGO PRAZO
+
+Este projeto deve se tornar uma base reutilizável para criação de lojas virtuais profissionais.
+
+A ideia é possuir uma única plataforma capaz de gerar diferentes lojas através de configurações.
+
+Exemplo:
+
+PLATAFORMA
+|
++-- Loja de roupas femininas
++-- Loja de roupas masculinas
++-- Loja infantil
++-- Loja de calçados
++-- Loja de acessórios
++-- Loja de cosméticos
+
+Cada loja possui identidade própria, mas utiliza a mesma infraestrutura.
+
+O foco deve ser criar um sistema robusto, configurável, visualmente profissional e fácil de administrar.
+
+
+43. REGRA FINAL
+
+Antes de implementar qualquer funcionalidade, verificar:
+
+1. Essa funcionalidade pertence à loja pública ou ao painel?
+2. Precisa de persistência no banco?
+3. Precisa de autenticação?
+4. Precisa de controle de permissão?
+5. Precisa respeitar o tenant?
+6. Afeta estoque?
+7. Afeta pedidos?
+8. Afeta pagamentos?
+9. Afeta analytics?
+10. Precisa ser configurável pelo lojista?
+
+O projeto deve sempre ser desenvolvido pensando em produto real, não apenas em demonstração visual.
+
+A interface atual é o ponto de partida. O objetivo final é uma plataforma completa de e-commerce para lojas de moda.

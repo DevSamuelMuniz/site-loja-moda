@@ -34,13 +34,13 @@ import { photo } from '@/lib/images';
  * O metadata da home vem do layout raiz, que ja declara titulo, descricao e
  * canonical da raiz do site.
  */
-export default function HomePage() {
-  const categories = getCategories({ featuredOnly: true });
-  const featured = getFeaturedProducts();
-  const newArrivals = getNewArrivals();
-  const saleProducts = getSaleProducts();
-  const essential = getCollectionBySlug('essential-26');
-  const summary = getCatalogSummary();
+export default async function HomePage() {
+  const categories = await getCategories({ featuredOnly: true });
+  const featured = await getFeaturedProducts();
+  const newArrivals = await getNewArrivals();
+  const saleProducts = await getSaleProducts();
+  const essential = await getCollectionBySlug('essential-26');
+  const summary = await getCatalogSummary();
 
   return (
     <>

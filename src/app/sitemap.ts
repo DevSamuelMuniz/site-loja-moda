@@ -9,7 +9,7 @@ import { absoluteUrl } from '@/lib/seo';
  * Inclui apenas enderecos que devem ser indexados: as paginas de sacola, favoritos e
  * resultado de busca ficam de fora, porque sao pessoais ou duplicam o catalogo.
  */
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
   const staticRoutes: Array<{ path: string; priority: number }> = [
@@ -33,19 +33,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly' as const,
       priority: route.priority,
     })),
-    ...getCategories().map((category) => ({
+    ...(await getCategories()).map((category) => ({
       url: absoluteUrl(`/categoria/${category.slug}`),
       lastModified: now,
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     })),
-    ...getCollections().map((collection) => ({
+    ...(await getCollections()).map((collection) => ({
       url: absoluteUrl(`/colecoes/${collection.slug}`),
       lastModified: new Date(collection.releasedAt),
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     })),
-    ...allProducts().map((product) => ({
+    ...(await allProducts()).map((product) => ({
       url: absoluteUrl(`/produtos/${product.slug}`),
       lastModified: new Date(product.releasedAt),
       changeFrequency: 'weekly' as const,

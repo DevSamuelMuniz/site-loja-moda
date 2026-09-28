@@ -19,8 +19,8 @@ import { breadcrumbSchema, buildMetadata, productSchema } from '@/lib/seo';
  * enquanto a pessoa decide.
  */
 
-export function generateStaticParams() {
-  return allProducts().map((product) => ({ slug: product.slug }));
+export async function generateStaticParams() {
+  return (await allProducts()).map((product) => ({ slug: product.slug }));
 }
 
 export async function generateMetadata({
@@ -29,7 +29,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
 
   if (!product) {
     return buildMetadata({
@@ -53,11 +53,13 @@ export async function generateMetadata({
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const categoryLabel = categoryLabels()[product.category] ?? product.category;
-  const collectionLabel = product.collection ? collectionLabels()[product.collection] : undefined;
+  const categoryLabel = (await categoryLabels())[product.category] ?? product.category;
+  const collectionLabel = product.collection
+    ? (await collectionLabels())[product.collection]
+    : undefined;
 
   const crumbs = [
     { label: 'Início', href: '/' },

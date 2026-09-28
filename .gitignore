@@ -9,6 +9,10 @@
 /build
 next-env.d.ts
 
+# prisma: o cliente e gerado a partir do schema por `npm run db:generate`,
+# que ja roda dentro de `npm run build` e de `npm run verify`.
+/src/generated/
+
 # ambiente
 .env
 .env*.local

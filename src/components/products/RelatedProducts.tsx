@@ -9,8 +9,8 @@ import type { Product } from '@/types';
  * A recomendacao prioriza colecao, depois categoria e tags, para que a sugestao faca
  * sentido com a peca que a pessoa esta vendo — e nao apenas "outros produtos".
  */
-export function RelatedProducts({ product }: { product: Product }) {
-  const related = getRelatedProducts(product, ecommerceConfig.catalog.relatedLimit);
+export async function RelatedProducts({ product }: { product: Product }) {
+  const related = await getRelatedProducts(product, ecommerceConfig.catalog.relatedLimit);
   if (related.length === 0) return null;
 
   return (

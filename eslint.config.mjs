@@ -14,7 +14,15 @@ import prettier from 'eslint-config-prettier';
  */
 const config = [
   {
-    ignores: ['.next/**', 'node_modules/**', 'next-env.d.ts', 'out/**', 'public/**'],
+    ignores: [
+      '.next/**',
+      'node_modules/**',
+      'next-env.d.ts',
+      'out/**',
+      'public/**',
+      /* Cliente gerado pelo Prisma: codigo de terceiro, nao se revisa com lint. */
+      'src/generated/**',
+    ],
   },
   ...nextCoreWebVitals,
   ...nextTypescript,

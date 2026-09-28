@@ -1,15 +1,14 @@
-import { allProducts } from '@/lib/catalog';
 import { productCompareAtPrice, productPrice } from '@/lib/catalog/filters';
+import { loadCatalog } from '@/lib/catalog/source';
 import type { Product } from '@/types';
 
 /**
  * Indice comercial.
  *
- * A sacola e os favoritos vivem no navegador, entao eles nao podem importar o
- * catalogo inteiro: seria enviar descricoes, composicao e medidas de todo o
- * catalogo para o cliente. Este modulo produz apenas o necessario para montar a
- * sacola e a lista de favoritos, e o layout raiz entrega esse indice aos
- * providers uma unica vez.
+ * A sacola e os favoritos vivem no navegador, entao eles nao podem importar o catalogo
+ * inteiro: seria enviar descricoes, composicao e medidas de todo o catalogo para o cliente.
+ * Este modulo produz apenas o necessario para montar a sacola e a lista de favoritos, e o
+ * layout raiz entrega esse indice aos providers uma unica vez.
  */
 
 export interface CommerceEntry {
@@ -44,8 +43,9 @@ function toEntry(product: Product): CommerceEntry {
   };
 }
 
-export function getCommerceIndex(): CommerceEntry[] {
-  return allProducts().map(toEntry);
+export async function getCommerceIndex(): Promise<CommerceEntry[]> {
+  const { products } = await loadCatalog();
+  return products.map(toEntry);
 }
 
 export function toCommerceEntry(product: Product): CommerceEntry {

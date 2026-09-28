@@ -34,8 +34,8 @@ export default async function ProductsPage({
   const filters = readFilters(params);
   const page = readPage(params);
 
-  const facets = getFacets(filters);
-  const result = queryProducts(filters, page);
+  const facets = await getFacets(filters);
+  const result = await queryProducts(filters, page);
 
   return (
     <Container className="py-10 lg:py-14">
@@ -44,8 +44,8 @@ export default async function ProductsPage({
       <header className="mt-6 max-w-[var(--measure-wide)]">
         <h1 className="type-display text-display-lg">Todos os produtos</h1>
         <p className="type-body text-body-lg text-muted mt-4">
-          {getProducts().length} peças no catálogo. Combine os filtros para chegar mais rápido no
-          que você procura.
+          {(await getProducts()).length} peças no catálogo. Combine os filtros para chegar mais
+          rápido no que você procura.
         </p>
       </header>
 

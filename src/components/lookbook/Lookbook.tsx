@@ -15,8 +15,16 @@ import type { LookbookLook } from '@/types';
  * imagem leva aos produtos que compoem o look, com os nomes listados embaixo —
  * aqui a legenda e informacao, nao decoracao.
  */
-export function Lookbook({ looks, className }: { looks: LookbookLook[]; className?: string }) {
+export async function Lookbook({
+  looks,
+  className,
+}: {
+  looks: LookbookLook[];
+  className?: string;
+}) {
   if (looks.length === 0) return null;
+
+  const productsByLook = await Promise.all(looks.map((look) => getProductsBySlugs(look.products)));
 
   return (
     <Section id="inspire-se" labelledBy="inspire-se-titulo" className={className}>
@@ -34,7 +42,7 @@ export function Lookbook({ looks, className }: { looks: LookbookLook[]; classNam
 
         <ul className="mt-10 grid gap-x-[var(--layout-grid-gap)] gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
           {looks.map((look, index) => {
-            const products = getProductsBySlugs(look.products);
+            const products = productsByLook[index];
             const lead = products[0];
 
             return (
