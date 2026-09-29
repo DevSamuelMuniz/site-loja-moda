@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { getPrisma } from '@/lib/db';
+import { can, type AdminAction, type AdminModule } from '@/lib/auth/permissions';
 import type { UserRole } from '@/generated/prisma/enums';
 
 /**
@@ -11,7 +12,7 @@ import type { UserRole } from '@/generated/prisma/enums';
  * situacao vem de `users` a cada acesso.
  */
 
-/** Papeis com acesso ao painel. Permissao por modulo entra na FASE 2 (escopo §23). */
+/** Papeis com acesso ao painel. O que cada um pode fazer dentro dele vive em `permissions`. */
 const STAFF_ROLES: readonly UserRole[] = ['ADMIN', 'MANAGER', 'OPERATOR'];
 
 export interface SessionUser {
@@ -52,5 +53,23 @@ export async function requireStaff(): Promise<SessionUser> {
   if (!user) redirect('/entrar?erro=sessao');
   if (!isStaff(user.role)) redirect('/entrar?erro=permissao');
 
+  return user;
+}
+
+/**
+ * Exige permissao **de modulo** (escopo §23).
+ *
+ * E a versao que toda pagina do painel e toda server action usam. O `requireStaff` continua
+ * existindo para a casca do painel: ela precisa deixar entrar quem tem ao menos um modulo.
+ *
+ * Sem permissao, o destino e a visao geral — nao o formulario de entrada. O usuario ja esta
+ * autenticado; o que falta e direito de acesso, e a mensagem diz exatamente isso.
+ */
+export async function requirePermission(
+  module: AdminModule,
+  action: AdminAction = 'view',
+): Promise<SessionUser> {
+  const user = await requireStaff();
+  if (!can(user.role, module, action)) redirect(`/admin?erro=permissao&modulo=${module}`);
   return user;
 }

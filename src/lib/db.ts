@@ -1,5 +1,14 @@
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@/generated/prisma/client';
+import { PrismaClient, type Prisma } from '@/generated/prisma/client';
+
+/**
+ * Tipo do cliente **dentro** de uma transacao.
+ *
+ * Servico que precisa participar de uma transacao alheia (baixar estoque ao criar pedido,
+ * por exemplo) recebe este tipo em vez de abrir a propria: e o que garante "ou tudo, ou
+ * nada" entre pedido e estoque (escopo §8).
+ */
+export type Tx = Prisma.TransactionClient;
 
 /**
  * Cliente Prisma.

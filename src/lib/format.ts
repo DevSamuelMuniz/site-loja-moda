@@ -22,6 +22,21 @@ const dateFormatter = new Intl.DateTimeFormat(ecommerceConfig.locale, {
   year: 'numeric',
 });
 
+/** Data e hora curtas, para listas do painel: `28/09/2026 14:32`. */
+const shortDateTimeFormatter = new Intl.DateTimeFormat(ecommerceConfig.locale, {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+const shortDateFormatter = new Intl.DateTimeFormat(ecommerceConfig.locale, {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+});
+
 export function formatCurrency(value: number): string {
   return currencyFormatter.format(value);
 }
@@ -33,6 +48,18 @@ export function formatNumber(value: number): string {
 export function formatDate(value: string | Date): string {
   const date = typeof value === 'string' ? new Date(value) : value;
   return dateFormatter.format(date);
+}
+
+export function formatDateTime(value: string | Date): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  return shortDateTimeFormatter.format(date);
+}
+
+/** Somente a data numerica — usado nas listas, onde a hora nao ajuda a decidir nada. */
+export function formatShortDate(value: string | Date | null | undefined): string {
+  if (!value) return '—';
+  const date = typeof value === 'string' ? new Date(value) : value;
+  return shortDateFormatter.format(date);
 }
 
 /** Percentual de desconto entre `compareAtPrice` e `price`. */

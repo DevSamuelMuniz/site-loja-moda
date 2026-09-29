@@ -47,12 +47,20 @@ model Store {
   currency  String      @default("BRL")
   locale    String      @default("pt-BR")
   status    StoreStatus @default(ACTIVE)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+
+  /// Prefixo do numero do pedido (escopo §13: `AUR-1024`). Editavel pela loja.
+  orderPrefix   String @default("PED")
+  /// Ultimo numero de pedido emitido. Avanca dentro da transacao que cria o pedido —
+  /// e o que garante numero unico por loja sem depender de `count(*)`.
+  orderSequence Int    @default(1000)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   settings           Setting[]
   users              User[]
   customers          Customer[]
+  addresses          Address[]
   categories         Category[]
   collections        Collection[]
   products           Product[]
@@ -61,6 +69,11 @@ model Store {
   productVariants    ProductVariant[]
   inventory          Inventory[]
   inventoryMovements InventoryMovement[]
+  carts              Cart[]
+  cartItems          CartItem[]
+  orders             Order[]
+  orderItems         OrderItem[]
+  orderEvents        OrderStatusEvent[]
 
   @@map("stores")
 }
@@ -112,6 +125,8 @@ model User {
   store              Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
   customer           Customer?
   inventoryMovements InventoryMovement[]
+  placedOrders       Order[]             @relation("OrderPlacedBy")
+  orderEvents        OrderStatusEvent[]
 
   /// Unicidade por loja: a mesma pessoa pode administrar lojas diferentes.
   @@unique([storeId, email])
@@ -144,6 +159,10 @@ model Customer {
 
   store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
   user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  addresses Address[]
+  carts     Cart[]
+  orders    Order[]
 
   @@unique([storeId, email])
   @@index([storeId, createdAt])
@@ -279,6 +298,8 @@ model Product {
   colors     ProductColor[]
   variants   ProductVariant[]
   images     ProductImage[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
 
   /// Nao ha `@@index` em `tags` porque indice GIN nao e expressavel no schema: entra por
   /// SQL na migration quando a busca por tag virar gargalo (escopo §29).
@@ -332,11 +353,13 @@ model ProductVariant {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  store     Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  product   Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
-  color     ProductColor?       @relation(fields: [colorId], references: [id], onDelete: SetNull)
-  inventory Inventory?
-  movements InventoryMovement[]
+  store      Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product    Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color      ProductColor?       @relation(fields: [colorId], references: [id], onDelete: SetNull)
+  inventory  Inventory?
+  movements  InventoryMovement[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
 
   @@unique([storeId, sku])
   @@index([storeId, productId])
@@ -409,15 +432,241 @@ model InventoryMovement {
   reason    String?
   /// Usuario responsavel pelo ajuste.
   userId    String?
-  /// Pedido que originou a movimentacao. A FK entra na FASE 2, com a tabela `orders`.
+  /// Pedido que originou a movimentacao (FASE 2, quando a tabela `orders` entrou).
   orderId   String?
   createdAt DateTime              @default(now())
 
   store   Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
   variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
   user    User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  order   Order?         @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
   @@index([storeId, variantId, createdAt])
   @@index([storeId, type])
   @@map("inventory_movements")
+}
+
+// ---------------------------------------------------------------------------
+// Enderecos
+// ---------------------------------------------------------------------------
+
+/// Endereco do cliente (escopo §16, §32).
+///
+/// O pedido guarda o **snapshot** do endereco usado, nao uma referencia: mudar o cadastro
+/// depois nao pode reescrever o destino de uma entrega que ja saiu.
+model Address {
+  id         String    @id @default(cuid())
+  storeId    String
+  customerId String
+  /// Rotulo dado pelo cliente: "Casa", "Trabalho".
+  label      String?
+  recipient  String
+  phone      String?
+  postalCode String
+  line1      String
+  number     String?
+  complement String?
+  district   String?
+  city       String
+  state      String
+  country    String    @default("BR")
+  /// Um endereco padrao por cliente. A regra e do servico, nao do schema: trocar o padrao
+  /// exige desmarcar o anterior na mesma transacao.
+  isDefault  Boolean   @default(false)
+  deletedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  store    Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, customerId, isDefault])
+  @@map("addresses")
+}
+
+// ---------------------------------------------------------------------------
+// Carrinho (escopo §11)
+// ---------------------------------------------------------------------------
+
+/// Carrinho persistido.
+///
+/// De onde vem o dado (AGENTS.md): o visitante guarda a sacola no navegador e o carrinho do
+/// banco e o do **cliente autenticado** — por isso `customerId` e obrigatorio. A sacola do
+/// visitante so vira linha aqui quando ele entra na conta (a fusao e feita no login).
+///
+/// Um carrinho por cliente nesta fase. Historico de carrinho abandonado e assunto da
+/// FASE 4 (§24): vai precisar de mais de uma linha por cliente e vira migration propria.
+model Cart {
+  id         String   @id @default(cuid())
+  storeId    String
+  customerId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  store    Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items    CartItem[]
+
+  @@unique([storeId, customerId])
+  @@map("carts")
+}
+
+/// Linha da sacola. Uma por **variacao** (cor × tamanho) — a unidade que tem SKU e estoque
+/// proprio (escopo §7, §8). "Alterar variacao" na sacola e trocar `variantId`; juntar as duas
+/// no mesmo carrinho soma quantidade.
+///
+/// Nao guarda preco: o valor e lido do catalogo na hora de exibir, e o preco praticado fica
+/// congelado apenas no pedido (escopo §13).
+model CartItem {
+  id            String   @id @default(cuid())
+  storeId       String
+  cartId        String
+  productId     String
+  variantId     String
+  quantity      Int      @default(1)
+  /// "Salvos para depois": a sacola ja tinha esse estado no navegador e ele continua.
+  savedForLater Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  store   Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  cart    Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, variantId])
+  @@index([storeId, cartId, savedForLater])
+  @@map("cart_items")
+}
+
+// ---------------------------------------------------------------------------
+// Pedidos (escopo §13)
+// ---------------------------------------------------------------------------
+
+/// Status do pedido (escopo §13). A ordem segue o funil de atendimento.
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+  RETURNED
+}
+
+/// Origem do pedido. Na FASE 2 a entrada e manual — balcao, WhatsApp, telefone —, que e como
+/// a loja vende hoje. `ONLINE` passa a ser gravado quando o checkout existir (FASE 3).
+enum OrderChannel {
+  ONLINE
+  STORE
+  WHATSAPP
+  PHONE
+}
+
+/// Pedido (escopo §13).
+///
+/// Guarda o que foi vendido, para quem, por quanto e em que estado — e nada disso se altera
+/// sem registrar em `order_status_events`.
+model Order {
+  id      String       @id @default(cuid())
+  storeId String
+  /// Numero visivel ao cliente, unico **por loja**: `AUR-1024`.
+  number  String
+  status  OrderStatus  @default(PENDING_PAYMENT)
+  channel OrderChannel @default(STORE)
+
+  customerId  String
+  /// Conta de equipe que registrou o pedido. Nulo quando o pedido nasce do checkout.
+  createdById String?
+
+  /// Snapshot de quem comprou: alterar o cadastro depois nao reescreve historico.
+  customerName String
+  email        String
+  phone        String?
+  document     String?
+
+  /// Endereco de entrega no momento do pedido (escopo §13), como snapshot.
+  shippingAddress Json?
+  /// Como a entrega foi combinada: "Retirada na loja", "Entrega propria", "Correios"…
+  shippingLabel   String?
+
+  subtotal       Decimal @db.Decimal(10, 2)
+  discountAmount Decimal @default(0) @db.Decimal(10, 2)
+  shippingAmount Decimal @default(0) @db.Decimal(10, 2)
+  total          Decimal @db.Decimal(10, 2)
+
+  /// Forma de pagamento combinada ("PIX", "Dinheiro", "Cartao na maquininha"). A tabela
+  /// `payments` e a integracao com gateway sao da FASE 3 (escopo §14).
+  paymentMethod String?
+  notes         String?
+
+  /// Nao nulo enquanto o estoque deste pedido estiver baixado. E o que impede baixar ou
+  /// devolver duas vezes o mesmo pedido (escopo §8).
+  stockDeductedAt DateTime?
+
+  placedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store     Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer  Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  createdBy User?               @relation("OrderPlacedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  items     OrderItem[]
+  events    OrderStatusEvent[]
+  movements InventoryMovement[]
+
+  @@unique([storeId, number])
+  @@index([storeId, status, placedAt])
+  @@index([storeId, customerId, placedAt])
+  @@map("orders")
+}
+
+/// Linha do pedido: copia do que foi vendido. O catalogo muda (preco, nome, cor) e o pedido
+/// nao pode mudar junto — por isso os campos sao copiados, e a referencia ao produto e
+/// opcional e anulavel.
+model OrderItem {
+  id        String  @id @default(cuid())
+  storeId   String
+  orderId   String
+  productId String?
+  variantId String?
+  name      String
+  sku       String
+  colorName String?
+  size      String?
+  unitPrice Decimal @db.Decimal(10, 2)
+  quantity  Int
+  lineTotal Decimal @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+
+  store   Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, orderId])
+  @@index([storeId, variantId])
+  @@map("order_items")
+}
+
+/// Historico de alteracoes do pedido (escopo §13, §20): de qual status para qual, quando,
+/// por quem e por que. Nenhuma mudanca de status acontece sem uma linha aqui.
+model OrderStatusEvent {
+  id        String       @id @default(cuid())
+  storeId   String
+  orderId   String
+  from      OrderStatus?
+  to        OrderStatus
+  note      String?
+  userId    String?
+  createdAt DateTime     @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, orderId, createdAt])
+  @@map("order_status_events")
 }

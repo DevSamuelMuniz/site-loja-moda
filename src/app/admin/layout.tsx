@@ -1,16 +1,19 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { AdminNav } from '@/components/admin/AdminNav';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/Button';
-import { requireStaff } from '@/lib/auth/guards';
 import { logoutAction } from '@/app/entrar/actions';
+import { requireStaff } from '@/lib/auth/guards';
+import { visibleModules } from '@/lib/auth/permissions';
 import type { UserRole } from '@/generated/prisma/enums';
 
 /**
  * Casca do painel.
  *
- * A protecao acontece aqui, no servidor: `requireStaff` redireciona antes de qualquer
- * pagina filha renderizar. Esconder item de menu nao seria autorizacao (escopo §23).
+ * A protecao acontece aqui, no servidor: `requireStaff` redireciona antes de qualquer pagina
+ * filha renderizar. Esconder item de menu nao seria autorizacao (escopo §23) — a lista de
+ * modulos e filtrada por permissao, e cada pagina confere de novo com `requirePermission`.
  */
 
 export const metadata: Metadata = {
@@ -30,7 +33,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <Container className="py-12 lg:py-16">
-      <header className="border-border flex flex-wrap items-end justify-between gap-6 border-b pb-6">
+      <header className="flex flex-wrap items-end justify-between gap-6">
         <div>
           <p className="type-label text-label text-muted">Painel</p>
           <h1 className="type-display text-body-lg mt-2">{user.name}</h1>
@@ -39,27 +42,21 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </p>
         </div>
 
-        <form action={logoutAction}>
-          <Button type="submit" variant="outline" size="sm">
-            Sair
-          </Button>
-        </form>
+        <div className="flex items-center gap-4">
+          <Link href="/" className="type-body text-body-sm link-rule text-primary">
+            Ver a loja
+          </Link>
+          <form action={logoutAction}>
+            <Button type="submit" variant="outline" size="sm">
+              Sair
+            </Button>
+          </form>
+        </div>
       </header>
 
-      <nav aria-label="Seções do painel" className="mt-6">
-        <ul className="flex flex-wrap gap-x-6 gap-y-2">
-          <li>
-            <Link href="/admin" className="type-body text-body link-rule">
-              Visão geral
-            </Link>
-          </li>
-          <li>
-            <Link href="/" className="type-body text-body link-rule">
-              Ver a loja
-            </Link>
-          </li>
-        </ul>
-      </nav>
+      <div className="mt-6">
+        <AdminNav modules={visibleModules(user.role)} />
+      </div>
 
       <div className="mt-10">{children}</div>
     </Container>

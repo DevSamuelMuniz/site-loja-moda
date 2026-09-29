@@ -103,6 +103,9 @@ async function main() {
       legalName: brandConfig.legalName,
       currency: ecommerceConfig.currency,
       locale: ecommerceConfig.locale,
+      /* Numeracao do pedido (§13): `AUR-1000`. O primeiro pedido sai com o numero inicial. */
+      orderPrefix: ecommerceConfig.orders.numberPrefix,
+      orderSequence: ecommerceConfig.orders.numberStart - 1,
     },
   });
   console.warn(`loja: ${store.name} (${store.slug})`);
